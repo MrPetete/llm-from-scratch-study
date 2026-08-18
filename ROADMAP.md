@@ -1,0 +1,49 @@
+# Roadmap
+
+Working solo, own implementation for every section. Reference material is read, then
+closed, then implemented from understanding — compared against the reference afterward
+to find gaps, not copied upfront.
+
+## Phase 1 — Foundations (target: summer, before semester starts)
+
+### Section 1 — Tokenization & data (`ch01_tokenizer/`)
+- [ ] Simple word-level tokenizer: split raw text, build vocab, encode/decode round-trip
+- [ ] Toy Byte Pair Encoding (BPE) implemented from scratch (small vocab, understand the merge algorithm)
+- [ ] Compare toy BPE against `tiktoken`'s GPT-2 encoding on the same text
+- [ ] Sliding-window dataset + DataLoader producing (input, target) pairs for next-token prediction
+- **Checkpoint:** encode → decode round-trip is lossless; DataLoader yields correctly shaped batches
+
+### Section 2 — Attention (`ch02_attention/`)
+- [ ] Simplified self-attention (no trainable weights) — raw dot-product attention on toy vectors
+- [ ] Scaled dot-product self-attention with trainable Q/K/V weight matrices
+- [ ] Causal mask (prevent attending to future positions)
+- [ ] Multi-head attention (split into heads, concat, project)
+- **Checkpoint:** print the attention weight matrix on a toy sequence, visually confirm the causal mask zeroes out future positions; verify output shape end to end
+
+### Section 3 — GPT architecture (`ch03_gpt_model/`)
+- [ ] LayerNorm, GELU, feed-forward block
+- [ ] Transformer block (attention + feed-forward + residuals + norm placement)
+- [ ] Full GPT model: token embeddings + positional embeddings + stacked blocks + output head
+- [ ] Text generation loop (forward pass → sample next token → append → repeat)
+- **Checkpoint:** forward pass on random input returns `[batch, seq_len, vocab_size]`; untrained model can run the generation loop (output will be gibberish — confirming the mechanics work, not the quality)
+
+**Model size for Phase 1:** small by design (e.g. embedding dim 64–128, 2–4 layers, 2–4 heads)
+— CPU-only hardware, the point here is correctness and understanding, not scale.
+
+## Phase 2 — Pretraining & fine-tuning (target: late summer)
+- [ ] Training loop with loss tracking (train/val split, loss curves)
+- [ ] Pretrain the small GPT on a modest text corpus — local for small runs, Colab free-tier GPU for anything heavier
+- [ ] Classification fine-tuning (adapt the model head for a downstream task)
+- [ ] Instruction fine-tuning on a small instruction dataset
+- **Deliverable:** documented experiment log — configs tried, loss curves, what broke and why
+
+## Phase 3 — Applied differentiator: time-series adaptation (target: into semester)
+- [ ] Adapt the architecture for numeric time-series input (patch-based tokenization, similar in spirit to PatchTST)
+- [ ] Benchmark against a classical baseline (ARIMA) and an LSTM baseline on a real dataset
+- [ ] Write up the comparison — this is the centerpiece for CV/interview discussion, not just "built a GPT"
+
+## Notes convention
+
+Each completed task gets a short entry in `notes/` — a few sentences: what was built,
+one bug hit and how it was fixed. This becomes the raw material for a CV bullet and for
+answering "walk me through what you built" in an interview.
