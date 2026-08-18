@@ -7,10 +7,11 @@ to find gaps, not copied upfront.
 ## Phase 1 — Foundations (target: summer, before semester starts)
 
 ### Section 1 — Tokenization & data (`ch01_tokenizer/`)
-- [ ] Simple word-level tokenizer: split raw text, build vocab, encode/decode round-trip
-- [ ] Toy Byte Pair Encoding (BPE) implemented from scratch (small vocab, understand the merge algorithm)
-- [ ] Compare toy BPE against `tiktoken`'s GPT-2 encoding on the same text
+- [x] Simple word-level tokenizer: split raw text, build vocab, encode/decode round-trip
+- [ ] Special tokens (`<|unk|>`, `<|endoftext|>`) — `SimpleTokenizerV2`
+- [ ] Byte Pair Encoding (BPE) via `tiktoken`, understand the merge algorithm conceptually
 - [ ] Sliding-window dataset + DataLoader producing (input, target) pairs for next-token prediction
+- [ ] Token embeddings (`nn.Embedding`) + positional embeddings — the actual input tensor for Ch3
 - **Checkpoint:** encode → decode round-trip is lossless; DataLoader yields correctly shaped batches
 
 ### Section 2 — Attention (`ch02_attention/`)

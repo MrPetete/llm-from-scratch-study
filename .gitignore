@@ -6,3 +6,4 @@ __pycache__/
 *.pth
 data/raw/
 .DS_Store
+*.pdf
