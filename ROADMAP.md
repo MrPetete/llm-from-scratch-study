@@ -8,8 +8,8 @@ to find gaps, not copied upfront.
 
 ### Section 1 — Tokenization & data (`ch01_tokenizer/`)
 - [x] Simple word-level tokenizer: split raw text, build vocab, encode/decode round-trip
-- [ ] Special tokens (`<|unk|>`, `<|endoftext|>`) — `SimpleTokenizerV2`
-- [ ] Byte Pair Encoding (BPE) via `tiktoken`, understand the merge algorithm conceptually
+- [x] Special tokens (`<|unk|>`, `<|endoftext|>`) — `SimpleTokenizerV2`
+- [x] Byte Pair Encoding (BPE) via `tiktoken`, understand the merge algorithm conceptually
 - [ ] Sliding-window dataset + DataLoader producing (input, target) pairs for next-token prediction
 - [ ] Token embeddings (`nn.Embedding`) + positional embeddings — the actual input tensor for Ch3
 - **Checkpoint:** encode → decode round-trip is lossless; DataLoader yields correctly shaped batches
