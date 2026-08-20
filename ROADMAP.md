@@ -15,11 +15,11 @@ to find gaps, not copied upfront.
 - **Checkpoint:** encode → decode round-trip is lossless; DataLoader yields correctly shaped batches; embeddings ready for transformer ✅
 
 ### Section 2 — Attention (`ch02_attention/`)
-- [ ] Simplified self-attention (no trainable weights) — raw dot-product attention on toy vectors
-- [ ] Scaled dot-product self-attention with trainable Q/K/V weight matrices
-- [ ] Causal mask (prevent attending to future positions)
-- [ ] Multi-head attention (split into heads, concat, project)
-- **Checkpoint:** print the attention weight matrix on a toy sequence, visually confirm the causal mask zeroes out future positions; verify output shape end to end
+- [x] Simplified self-attention (no trainable weights) — raw dot-product attention on toy vectors
+- [x] Scaled dot-product self-attention with trainable Q/K/V weight matrices
+- [x] Causal mask (prevent attending to future positions)
+- [x] Multi-head attention (split into heads, concat, project)
+- **Checkpoint:** print the attention weight matrix on a toy sequence, visually confirm the causal mask zeroes out future positions; verify output shape end to end ✅
 
 ### Section 3 — GPT architecture (`ch03_gpt_model/`)
 - [ ] LayerNorm, GELU, feed-forward block
