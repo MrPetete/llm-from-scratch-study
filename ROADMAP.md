@@ -10,9 +10,9 @@ to find gaps, not copied upfront.
 - [x] Simple word-level tokenizer: split raw text, build vocab, encode/decode round-trip
 - [x] Special tokens (`<|unk|>`, `<|endoftext|>`) — `SimpleTokenizerV2`
 - [x] Byte Pair Encoding (BPE) via `tiktoken`, understand the merge algorithm conceptually
-- [ ] Sliding-window dataset + DataLoader producing (input, target) pairs for next-token prediction
+- [x] Sliding-window dataset + DataLoader producing (input, target) pairs for next-token prediction
 - [ ] Token embeddings (`nn.Embedding`) + positional embeddings — the actual input tensor for Ch3
-- **Checkpoint:** encode → decode round-trip is lossless; DataLoader yields correctly shaped batches
+- **Checkpoint:** encode → decode round-trip is lossless; DataLoader yields correctly shaped batches ✅
 
 ### Section 2 — Attention (`ch02_attention/`)
 - [ ] Simplified self-attention (no trainable weights) — raw dot-product attention on toy vectors
