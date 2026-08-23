@@ -22,11 +22,11 @@ to find gaps, not copied upfront.
 - **Checkpoint:** print the attention weight matrix on a toy sequence, visually confirm the causal mask zeroes out future positions; verify output shape end to end ✅
 
 ### Section 3 — GPT architecture (`ch03_gpt_model/`)
-- [ ] LayerNorm, GELU, feed-forward block
-- [ ] Transformer block (attention + feed-forward + residuals + norm placement)
-- [ ] Full GPT model: token embeddings + positional embeddings + stacked blocks + output head
-- [ ] Text generation loop (forward pass → sample next token → append → repeat)
-- **Checkpoint:** forward pass on random input returns `[batch, seq_len, vocab_size]`; untrained model can run the generation loop (output will be gibberish — confirming the mechanics work, not the quality)
+- [x] LayerNorm, GELU, feed-forward block
+- [x] Transformer block (attention + feed-forward + residuals + norm placement)
+- [x] Full GPT model: token embeddings + positional embeddings + stacked blocks + output head
+- [x] Text generation loop (forward pass → sample next token → append → repeat)
+- **Checkpoint:** forward pass on random input returns `[batch, seq_len, vocab_size]`; untrained model can run the generation loop (output will be gibberish — confirming the mechanics work, not the quality) ✅
 
 **Model size for Phase 1:** small by design (e.g. embedding dim 64–128, 2–4 layers, 2–4 heads)
 — CPU-only hardware, the point here is correctness and understanding, not scale.
