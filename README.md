@@ -21,7 +21,7 @@ my own version, then compare against the reference to find and fix gaps in under
 
 ## Status
 
-🚧 Phase 1 in progress — see [ROADMAP.md](./ROADMAP.md) for the full plan and task breakdown.
+Phase 1 in progress — see [ROADMAP.md](./ROADMAP.md) for the full plan and task breakdown.
 
 ## Project structure
 
