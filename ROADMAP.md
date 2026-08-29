@@ -32,8 +32,14 @@ to find gaps, not copied upfront.
 — CPU-only hardware, the point here is correctness and understanding, not scale.
 
 ## Phase 2 — Pretraining & fine-tuning (target: late summer)
-- [ ] Training loop with loss tracking (train/val split, loss curves)
-- [ ] Pretrain the small GPT on a modest text corpus — local for small runs, Colab free-tier GPU for anything heavier
+
+### Section 4 — Pretraining (`ch04_pretraining/`)
+- [x] Cross-entropy loss — manual walkthrough verified against `F.cross_entropy`, untrained-model loss confirmed close to the ln(vocab_size) random baseline
+- [x] Training loop (AdamW, backward/step, train/val loss tracking) — pretrained tiny GPT on "The Verdict" (20K chars), loss dropped 11.02 → 5.37 (train), overfitting visible in the val loss curve as expected
+- [x] Decoding strategies (temperature scaling, top-k sampling) — fixed greedy decoding's repetition-loop failure mode
+- [x] Save/load model weights (`state_dict` + optimizer state) — round-trip verified bit-for-bit identical
+- **Checkpoint:** model trained on a small corpus produces grammatically-plausible (if overfit/repetitive) text, clearly improved over Chapter 3's random gibberish ✅
+
 - [ ] Classification fine-tuning (adapt the model head for a downstream task)
 - [ ] Instruction fine-tuning on a small instruction dataset
 - **Deliverable:** documented experiment log — configs tried, loss curves, what broke and why
