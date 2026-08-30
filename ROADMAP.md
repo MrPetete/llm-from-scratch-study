@@ -38,7 +38,9 @@ to find gaps, not copied upfront.
 - [x] Training loop (AdamW, backward/step, train/val loss tracking) — pretrained tiny GPT on "The Verdict" (20K chars), loss dropped 11.02 → 5.37 (train), overfitting visible in the val loss curve as expected
 - [x] Decoding strategies (temperature scaling, top-k sampling) — fixed greedy decoding's repetition-loop failure mode
 - [x] Save/load model weights (`state_dict` + optimizer state) — round-trip verified bit-for-bit identical
+- [x] Load pretrained GPT-2 weights from OpenAI (via HuggingFace safetensors) — proves the architecture is a faithful GPT-2 reimplementation
 - **Checkpoint:** model trained on a small corpus produces grammatically-plausible (if overfit/repetitive) text, clearly improved over Chapter 3's random gibberish ✅
+- **Checkpoint 2:** loading OpenAI's real GPT-2-small weights into our own `GPTModel` class produces output text WORD-FOR-WORD IDENTICAL to the book's reference output ("Every effort moves you toward finding an ideal new way to practice something!...") — strongest possible confirmation the architecture is correct ✅
 
 - [ ] Classification fine-tuning (adapt the model head for a downstream task)
 - [ ] Instruction fine-tuning on a small instruction dataset
