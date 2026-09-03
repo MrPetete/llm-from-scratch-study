@@ -42,7 +42,13 @@ to find gaps, not copied upfront.
 - **Checkpoint:** model trained on a small corpus produces grammatically-plausible (if overfit/repetitive) text, clearly improved over Chapter 3's random gibberish ✅
 - **Checkpoint 2:** loading OpenAI's real GPT-2-small weights into our own `GPTModel` class produces output text WORD-FOR-WORD IDENTICAL to the book's reference output ("Every effort moves you toward finding an ideal new way to practice something!...") — strongest possible confirmation the architecture is correct ✅
 
-- [ ] Classification fine-tuning (adapt the model head for a downstream task)
+### Section 5 — Classification fine-tuning (`ch05_finetuning/`)
+- [x] Dataset preparation: downloaded SMS Spam Collection (5,572 messages), balanced to 747+747, split 70/10/20, PyTorch dataloaders with padding to max_length=120
+- [x] Model setup: loaded OpenAI's GPT-2-small weights, replaced output layer (768→50257 becomes 768→2), froze all except last transformer block + final_norm + new head (5.70% trainable params)
+- [x] Training loop for classification: AdamW fine-tuning on spam detection task, tracking both loss and accuracy
+- [x] Inference function (`classify_review`) for new messages
+- **Checkpoint:** pipeline verified — model loads, trains, and improves accuracy from ~50% baseline (random guessing) to 57.5% after just 10 training batches; full 5-epoch training achieves ~97% train/val, ~96% test accuracy per the book ✅
+
 - [ ] Instruction fine-tuning on a small instruction dataset
 - **Deliverable:** documented experiment log — configs tried, loss curves, what broke and why
 

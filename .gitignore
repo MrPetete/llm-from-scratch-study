@@ -7,3 +7,6 @@ __pycache__/
 data/raw/
 .DS_Store
 *.pdf
+ch05_finetuning/sms_spam_collection/
+ch05_finetuning/*.zip
+ch05_finetuning/*.log
