@@ -59,7 +59,9 @@ def load_finetuned_model(checkpoint_path, device="cpu"):
 def generate_response(model, tokenizer, formatted_prompt, device, context_length,
                        max_new_tokens=100):
     """Generate a free-form text response to an instruction prompt."""
-    input_ids = torch.tensor([tokenizer.encode(formatted_prompt)]).to(device)
+    # Add the ### Response: header to the prompt before generation
+    full_prompt = formatted_prompt + "\n\n### Response:\n"
+    input_ids = torch.tensor([tokenizer.encode(full_prompt)]).to(device)
 
     with torch.no_grad():
         token_ids = generate_text_sampled(
@@ -68,12 +70,14 @@ def generate_response(model, tokenizer, formatted_prompt, device, context_length
         )
 
     generated_text = tokenizer.decode(token_ids[0].tolist())
-    response_only = generated_text[len(formatted_prompt):].strip()
+    # Extract only what comes after the full_prompt
+    response_only = generated_text[len(full_prompt):].strip()
 
-    # Stop at the next "### Instruction" if the model runs on (shouldn't with
-    # a well-trained model, but a safety net for an undertrained one)
+    # Stop at the next "###" or <|endoftext|> if the model runs on
     if "###" in response_only:
         response_only = response_only.split("###")[0].strip()
+    if "<|endoftext|>" in response_only:
+        response_only = response_only.split("<|endoftext|>")[0].strip()
 
     return response_only
 
