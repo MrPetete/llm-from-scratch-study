@@ -1,19 +1,4 @@
-"""
-Chapter 4, Step 4: Saving and Loading Model Weights
-
-Training takes time -- we don't want to retrain from scratch every time we
-want to use the model or continue training later. PyTorch's standard pattern:
-
-    torch.save(model.state_dict(), path)          # save
-    model.load_state_dict(torch.load(path))         # load into a matching architecture
-
-state_dict() is an OrderedDict mapping each layer's name to its tensor of
-learned weights -- NOT the model class itself. This means loading requires
-first constructing a GPTModel with the SAME config used during training,
-then loading the weights into it. Saving the optimizer state too (so training
-can resume exactly, including AdamW's momentum buffers) uses a checkpoint
-dict instead of just the raw state_dict.
-"""
+"""Save/load model + optimizer state so training doesn't need to restart from scratch."""
 
 import os
 import sys
@@ -32,10 +17,7 @@ def save_checkpoint(model, optimizer, path):
 
 
 def load_checkpoint(path, model, optimizer=None, map_location="cpu"):
-    """
-    Load a checkpoint into an already-constructed model (and optionally optimizer).
-    The model must be constructed with the SAME config it was trained with.
-    """
+    """Load a checkpoint into an already-constructed model (must use the same config)."""
     checkpoint = torch.load(path, map_location=map_location)
     model.load_state_dict(checkpoint["model_state_dict"])
     if optimizer is not None and "optimizer_state_dict" in checkpoint:
@@ -54,7 +36,7 @@ if __name__ == "__main__":
 
     print("=== Saving and Loading Model Weights ===\n")
 
-    # --- Quick training run (same as before) so we have real trained weights to save ---
+    # Train briefly so we have real (non-random) weights to save
     data_path = os.path.join(os.path.dirname(__file__), "..", "ch01_tokenizer", "data", "the-verdict.txt")
     with open(data_path, "r", encoding="utf-8") as f:
         raw_text = f.read()
@@ -70,7 +52,7 @@ if __name__ == "__main__":
     model = GPTModel(GPT_CONFIG_TINY)
     optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4, weight_decay=0.1)
 
-    print("Training briefly (5 epochs) to get real (non-random) weights to save...")
+    print("Training briefly (5 epochs)...")
     for epoch in range(5):
         for input_batch, target_batch in train_loader:
             optimizer.zero_grad()
@@ -79,7 +61,6 @@ if __name__ == "__main__":
             optimizer.step()
     print(f"Done. Final training loss: {loss.item():.4f}\n")
 
-    # --- Save ---
     checkpoint_dir = os.path.join(os.path.dirname(__file__), "checkpoints")
     os.makedirs(checkpoint_dir, exist_ok=True)
     checkpoint_path = os.path.join(checkpoint_dir, "tiny_gpt_verdict.pt")
@@ -89,8 +70,6 @@ if __name__ == "__main__":
     print(f"Saved checkpoint to: {checkpoint_path}")
     print(f"File size: {file_size_kb:.1f} KB\n")
 
-    # --- Prove loading actually works: build a FRESH model with random weights, ---
-    # --- confirm it generates differently, load the checkpoint, confirm it now matches ---
     print("--- Verifying save/load round-trip ---")
     tokenizer = tiktoken.get_encoding("gpt2")
     start_text = "Every effort moves you"
@@ -98,7 +77,7 @@ if __name__ == "__main__":
 
     from generate import generate_text
 
-    torch.manual_seed(999)   # different seed -- fresh random init, deliberately different from trained model
+    torch.manual_seed(999)  # different seed -- fresh random init
     fresh_model = GPTModel(GPT_CONFIG_TINY)
     fresh_ids = generate_text(fresh_model, start_ids, max_new_tokens=15, context_length=context_length)
     print(f"Fresh (random, untrained) model output: {repr(tokenizer.decode(fresh_ids[0].tolist()))}")
@@ -106,7 +85,6 @@ if __name__ == "__main__":
     trained_ids = generate_text(model, start_ids, max_new_tokens=15, context_length=context_length)
     print(f"Originally trained model output:        {repr(tokenizer.decode(trained_ids[0].tolist()))}")
 
-    # Load the checkpoint into the fresh model -- it should now match the trained model exactly
     fresh_optimizer = torch.optim.AdamW(fresh_model.parameters(), lr=5e-4, weight_decay=0.1)
     load_checkpoint(checkpoint_path, fresh_model, fresh_optimizer)
 
@@ -116,7 +94,6 @@ if __name__ == "__main__":
     match = torch.equal(trained_ids, loaded_ids)
     print(f"\nLoaded model's output EXACTLY matches the original trained model: {match}")
 
-    # Also verify the underlying weights are bit-for-bit identical, not just the generated text
     weights_match = all(
         torch.equal(p1, p2)
         for p1, p2 in zip(model.parameters(), fresh_model.parameters())

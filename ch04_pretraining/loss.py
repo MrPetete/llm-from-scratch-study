@@ -1,23 +1,4 @@
-"""
-Chapter 4, Step 1: Cross-Entropy Loss
-
-The model outputs logits [batch, seq_len, vocab_size] -- one score per
-vocabulary token at every sequence position. To train, we need a single
-scalar that measures "how wrong" these predictions are against the actual
-next tokens (the targets from our sliding-window DataLoader).
-
-Cross-entropy loss:
-    1. softmax(logits) -> probabilities over the vocabulary at each position
-    2. Look up the probability the model assigned to the TRUE target token
-    3. loss = -log(that probability)
-       - true prob = 1.0 -> loss = 0 (perfect prediction)
-       - true prob -> 0   -> loss -> infinity (terrible prediction)
-    4. Average this over all positions and all sequences in the batch
-
-PyTorch's nn.functional.cross_entropy does steps 1-3 in one numerically
-stable call (it works directly on logits, not pre-softmaxed probabilities,
-to avoid float precision issues with very small/large numbers).
-"""
+"""Cross-entropy loss over model logits vs the true next tokens."""
 
 import torch
 import torch.nn.functional as F
@@ -29,7 +10,7 @@ def calc_loss_batch(input_batch, target_batch, model, device="cpu"):
 
     Args:
         input_batch: [batch, seq_len] token IDs
-        target_batch: [batch, seq_len] token IDs (input shifted by 1, from GPTDatasetV1)
+        target_batch: [batch, seq_len] token IDs (input shifted by 1)
         model: a GPTModel instance
         device: "cpu" or "cuda"
 
@@ -37,12 +18,12 @@ def calc_loss_batch(input_batch, target_batch, model, device="cpu"):
         scalar loss tensor
     """
     input_batch, target_batch = input_batch.to(device), target_batch.to(device)
-    logits = model(input_batch)   # [batch, seq_len, vocab_size]
+    logits = model(input_batch)
 
     # cross_entropy expects [N, num_classes] and [N] -- flatten batch and seq_len together
     loss = F.cross_entropy(
-        logits.flatten(0, 1),      # [batch*seq_len, vocab_size]
-        target_batch.flatten(),    # [batch*seq_len]
+        logits.flatten(0, 1),
+        target_batch.flatten(),
     )
     return loss
 
@@ -55,7 +36,7 @@ def calc_loss_loader(dataloader, model, device="cpu", num_batches=None):
         dataloader: yields (input_batch, target_batch) pairs
         model: a GPTModel instance
         device: "cpu" or "cuda"
-        num_batches: cap on how many batches to average over (None = all of them)
+        num_batches: cap on batches to average over (None = all)
 
     Returns:
         average loss (float), or nan if the dataloader is empty
@@ -92,14 +73,12 @@ if __name__ == "__main__":
 
     print("=== Cross-Entropy Loss ===\n")
 
-    # --- Manual walkthrough on a tiny toy example first ---
     print("--- Manual walkthrough: 2 positions, tiny vocab ---")
-    # Pretend vocab_size=5, 2 positions in the sequence
     toy_logits = torch.tensor([
-        [2.0, 1.0, 0.1, 0.1, 0.1],   # position 0's logits over 5-token vocab
-        [0.1, 0.1, 0.1, 3.0, 0.1],   # position 1's logits
+        [2.0, 1.0, 0.1, 0.1, 0.1],
+        [0.1, 0.1, 0.1, 3.0, 0.1],
     ])
-    toy_targets = torch.tensor([0, 3])   # true next token at each position
+    toy_targets = torch.tensor([0, 3])
 
     probs = torch.softmax(toy_logits, dim=-1)
     print(f"Logits:\n{toy_logits}")
@@ -107,7 +86,7 @@ if __name__ == "__main__":
     print(f"True targets: {toy_targets}")
 
     true_token_probs = probs[torch.arange(2), toy_targets]
-    print(f"Probability assigned to the TRUE target at each position: {true_token_probs}")
+    print(f"Probability assigned to the true target at each position: {true_token_probs}")
 
     manual_loss = -torch.log(true_token_probs).mean()
     print(f"Manual loss (-log(true_prob), averaged): {manual_loss:.4f}")
@@ -116,7 +95,6 @@ if __name__ == "__main__":
     print(f"PyTorch F.cross_entropy result:          {pytorch_loss:.4f}")
     print(f"Match: {torch.allclose(manual_loss, pytorch_loss)}\n")
 
-    # --- Real model, real data ---
     print("--- Loss on the untrained tiny GPT model + real text ---")
     model = GPTModel(GPT_CONFIG_TINY)
 
@@ -124,7 +102,6 @@ if __name__ == "__main__":
     with open(data_path, "r", encoding="utf-8") as f:
         raw_text = f.read()
 
-    # Split 90/10 train/val (this file, this loss check now -- full train/val loop next step)
     split_idx = int(len(raw_text) * 0.9)
     train_text = raw_text[:split_idx]
     val_text = raw_text[split_idx:]
@@ -147,13 +124,12 @@ if __name__ == "__main__":
 
     import math
     random_guess_loss = math.log(GPT_CONFIG_TINY["vocab_size"])
-    print(f"\nFor comparison, loss of a UNIFORM RANDOM guesser: ln({GPT_CONFIG_TINY['vocab_size']}) = {random_guess_loss:.4f}")
-    print("An untrained model's loss should be close to this -- it hasn't learned")
-    print("anything yet, so its predictions are close to random guessing.")
+    print(f"\nFor comparison, uniform random guesser: ln({GPT_CONFIG_TINY['vocab_size']}) = {random_guess_loss:.4f}")
+    print("An untrained model's loss should be close to this baseline.")
 
     print("\n=== Key observations ===")
     print("1. Manual -log(true_prob) computation matches F.cross_entropy exactly")
-    print("2. F.cross_entropy works directly on logits (numerically stable, no separate softmax needed)")
-    print("3. Untrained model's loss is close to ln(vocab_size) -- the 'random guessing' baseline")
+    print("2. F.cross_entropy works directly on logits, numerically stable")
+    print("3. Untrained model's loss is close to ln(vocab_size), the random-guessing baseline")
     print("4. Lower loss = model assigns higher probability to the actual next token")
-    print("5. This loss is what we'll minimize during training -- next step: the training loop")
+    print("5. This loss is what we minimize during training -- next step: the training loop")

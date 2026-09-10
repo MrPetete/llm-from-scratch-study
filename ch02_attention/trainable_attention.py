@@ -1,36 +1,11 @@
-"""
-Chapter 2, Stage 2: Self-Attention with Trainable Weights (Q, K, V)
-
-The real mechanism used in GPT. Instead of using raw embeddings directly for
-the dot product (Stage 1), three trainable weight matrices project each input
-embedding into three different vectors:
-
-  Query  -- "what am I looking for?"   (the current token's search)
-  Key    -- "what do I offer?"          (each token's identifier, matched against queries)
-  Value  -- "what do I actually contain?" (the content retrieved once relevance is decided)
-
-Steps:
-  queries = x @ W_query,  keys = x @ W_key,  values = x @ W_value
-  attn_scores = queries @ keys.T
-  scaled_scores = attn_scores / sqrt(d_k)      <- scaled dot-product attention
-  attn_weights = softmax(scaled_scores)
-  context_vec  = attn_weights @ values
-
-Scaling by 1/sqrt(d_k) keeps the dot products from growing too large as the
-key dimension grows -- large dot products push softmax toward a near-step
-function (most weight on one token, ~0 elsewhere), which causes vanishing
-gradients during training.
-"""
+"""Self-attention with trainable Q/K/V projections -- the mechanism actually used in GPT."""
 
 import torch
 import torch.nn as nn
 
 
 class SelfAttentionV1(nn.Module):
-    """
-    Manual Q/K/V weight matrices as raw nn.Parameter tensors (matches the
-    book's first pass -- explicit, so every multiplication is visible).
-    """
+    """Q/K/V as raw nn.Parameter matrices, so every multiplication is explicit."""
     def __init__(self, d_in, d_out):
         super().__init__()
         self.W_query = nn.Parameter(torch.rand(d_in, d_out))
@@ -38,24 +13,20 @@ class SelfAttentionV1(nn.Module):
         self.W_value = nn.Parameter(torch.rand(d_in, d_out))
 
     def forward(self, x):
-        # x: [seq_len, d_in]
-        queries = x @ self.W_query      # [seq_len, d_out]
-        keys = x @ self.W_key           # [seq_len, d_out]
-        values = x @ self.W_value       # [seq_len, d_out]
+        queries = x @ self.W_query
+        keys = x @ self.W_key
+        values = x @ self.W_value
 
-        attn_scores = queries @ keys.T                      # [seq_len, seq_len]
+        attn_scores = queries @ keys.T
         d_k = keys.shape[-1]
         attn_weights = torch.softmax(attn_scores / d_k**0.5, dim=-1)
 
-        context_vec = attn_weights @ values                 # [seq_len, d_out]
+        context_vec = attn_weights @ values
         return context_vec
 
 
 class SelfAttentionV2(nn.Module):
-    """
-    Same computation, but using nn.Linear for the projections (standard
-    practice -- proper weight init, optional bias, plugs into larger models).
-    """
+    """Same computation as V1, using nn.Linear for the projections (proper init, optional bias)."""
     def __init__(self, d_in, d_out, qkv_bias=False):
         super().__init__()
         self.W_query = nn.Linear(d_in, d_out, bias=qkv_bias)
@@ -88,14 +59,13 @@ if __name__ == "__main__":
     ])
     tokens = ["Your", "journey", "starts", "with", "one", "step"]
 
-    d_in = inputs.shape[1]   # 3 (embedding dim of input)
-    d_out = 2                # 2 (output dim of context vectors -- smaller for demo)
+    d_in = inputs.shape[1]
+    d_out = 2
 
     print("=== Self-Attention with Trainable Weights (Q, K, V) ===\n")
     print(f"Input shape: {inputs.shape}  (seq_len=6, d_in={d_in})")
     print(f"Projecting to d_out={d_out}\n")
 
-    # --- V1: explicit nn.Parameter matrices ---
     print("--- SelfAttentionV1 (raw nn.Parameter W matrices) ---")
     torch.manual_seed(123)
     sa_v1 = SelfAttentionV1(d_in, d_out)
@@ -104,7 +74,6 @@ if __name__ == "__main__":
     print(f"Context vectors shape: {context_v1.shape}")
     print(f"Context vectors:\n{context_v1}\n")
 
-    # --- V2: nn.Linear projections ---
     print("--- SelfAttentionV2 (nn.Linear projections) ---")
     torch.manual_seed(123)
     sa_v2 = SelfAttentionV2(d_in, d_out)
@@ -112,7 +81,6 @@ if __name__ == "__main__":
     print(f"Context vectors shape: {context_v2.shape}")
     print(f"Context vectors:\n{context_v2}\n")
 
-    # --- Demonstrate the scaling factor's effect ---
     print("--- Why scale by 1/sqrt(d_k)? ---")
     queries = sa_v2.W_query(inputs)
     keys = sa_v2.W_key(inputs)

@@ -1,50 +1,24 @@
-"""
-Chapter 2, Stage 4: Multi-Head Attention
-
-Instead of one Q/K/V projection producing one attention pattern, split the
-output dimension into multiple parallel "heads," each with its own smaller
-Q/K/V. Each head can specialize in a different kind of relationship (e.g.
-one head might track syntactic dependency, another topical relevance). Their
-outputs are concatenated and passed through a final linear layer (out_proj).
-
-Practically: d_out is split into num_heads x head_dim. Attention is computed
-per head in parallel (via an extra tensor dimension, not a Python loop), then
-heads are combined back into a single vector per token.
-
-This module is literally what feeds into the transformer block in Chapter 3.
-"""
+"""Multi-head attention: split d_out into parallel heads, each learning a different attention pattern."""
 
 import torch
 import torch.nn as nn
 
 
 class MultiHeadAttention(nn.Module):
-    """
-    Multi-head causal self-attention, computed efficiently via reshaping
-    instead of looping over separate single-head modules.
-
-    Args:
-        d_in: input embedding dimension
-        d_out: total output dimension across all heads (must be divisible by num_heads)
-        context_length: max sequence length (for the causal mask buffer)
-        num_heads: number of parallel attention heads
-        dropout: dropout probability on attention weights
-        qkv_bias: whether Q/K/V linear layers have a bias term
-    """
+    """Multi-head causal self-attention, computed via reshaping instead of looping over separate heads."""
     def __init__(self, d_in, d_out, context_length, num_heads, dropout=0.0, qkv_bias=False):
         super().__init__()
         assert d_out % num_heads == 0, "d_out must be divisible by num_heads"
 
         self.d_out = d_out
         self.num_heads = num_heads
-        self.head_dim = d_out // num_heads   # dimension of each individual head
+        self.head_dim = d_out // num_heads
 
         self.W_query = nn.Linear(d_in, d_out, bias=qkv_bias)
         self.W_key = nn.Linear(d_in, d_out, bias=qkv_bias)
         self.W_value = nn.Linear(d_in, d_out, bias=qkv_bias)
 
-        # Combines the concatenated head outputs back into one d_out-dim vector.
-        self.out_proj = nn.Linear(d_out, d_out)
+        self.out_proj = nn.Linear(d_out, d_out)  # mixes concatenated head outputs back together
         self.dropout = nn.Dropout(dropout)
 
         mask = torch.triu(torch.ones(context_length, context_length), diagonal=1)
@@ -53,33 +27,27 @@ class MultiHeadAttention(nn.Module):
     def forward(self, x):
         batch_size, seq_len, d_in = x.shape
 
-        queries = self.W_query(x)   # [batch, seq_len, d_out]
+        queries = self.W_query(x)
         keys = self.W_key(x)
         values = self.W_value(x)
 
-        # Split d_out into (num_heads, head_dim), then move num_heads before seq_len
-        # so each head is processed as an independent batch dimension.
         # [batch, seq_len, d_out] -> [batch, seq_len, num_heads, head_dim] -> [batch, num_heads, seq_len, head_dim]
         queries = queries.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
         keys = keys.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
         values = values.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
 
-        # Attention scores per head: [batch, num_heads, seq_len, seq_len]
         attn_scores = queries @ keys.transpose(2, 3)
         attn_scores.masked_fill_(self.mask[:seq_len, :seq_len], -torch.inf)
 
         attn_weights = torch.softmax(attn_scores / self.head_dim**0.5, dim=-1)
         attn_weights = self.dropout(attn_weights)
 
-        # [batch, num_heads, seq_len, seq_len] @ [batch, num_heads, seq_len, head_dim]
-        # -> [batch, num_heads, seq_len, head_dim]
         context_vec = attn_weights @ values
 
-        # Recombine heads: [batch, num_heads, seq_len, head_dim] -> [batch, seq_len, num_heads, head_dim]
-        # -> [batch, seq_len, d_out] (concatenate heads back into one vector per token)
+        # recombine heads back into one d_out-dim vector per token
         context_vec = context_vec.transpose(1, 2).contiguous().view(batch_size, seq_len, self.d_out)
 
-        context_vec = self.out_proj(context_vec)   # final linear mix of the concatenated heads
+        context_vec = self.out_proj(context_vec)
         return context_vec
 
 
@@ -94,11 +62,11 @@ if __name__ == "__main__":
         [0.77, 0.25, 0.10],  # one
         [0.05, 0.80, 0.55],  # step
     ])
-    batch = torch.stack([inputs, inputs], dim=0)   # [2, 6, 3]
+    batch = torch.stack([inputs, inputs], dim=0)
 
     d_in = inputs.shape[1]
-    d_out = 4          # total output dim across all heads
-    num_heads = 2       # so each head has head_dim = 2
+    d_out = 4
+    num_heads = 2
     context_length = batch.shape[1]
 
     print("=== Multi-Head Attention ===\n")
@@ -113,7 +81,6 @@ if __name__ == "__main__":
     print("Output:")
     print(context_vecs)
 
-    # --- Show the shape transformations explicitly, step by step ---
     print("\n--- Shape walkthrough ---")
     with torch.no_grad():
         q = mha.W_query(batch)
@@ -124,7 +91,6 @@ if __name__ == "__main__":
         print(f"3. Q transposed (heads as batch dim): {q_transposed.shape}  (batch, num_heads, seq_len, head_dim)")
         print("   -> attention now computed independently per head, in parallel")
 
-    # --- Confirm each head produces a genuinely different attention pattern ---
     print("\n--- Do the two heads attend differently? ---")
     with torch.no_grad():
         queries = mha.W_query(batch).view(2, 6, num_heads, mha.head_dim).transpose(1, 2)

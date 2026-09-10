@@ -1,7 +1,4 @@
-"""
-Quick verification: 1 epoch, 10 batches only, to confirm the training pipeline works.
-Full 5-epoch training takes ~10-15 min on CPU; this runs in ~2 minutes.
-"""
+"""Quick smoke test: 1 epoch, 10 batches, to confirm the fine-tuning pipeline works (~2 min on CPU)."""
 
 import os
 import sys
@@ -29,7 +26,6 @@ print("=== Quick Verification: 1 epoch, limited batches ===\n")
 device = "cpu"
 torch.manual_seed(123)
 
-# Load dataset
 url = "https://archive.ics.uci.edu/static/public/228/sms+spam+collection.zip"
 data_file_path = Path("sms_spam_collection") / "SMSSpamCollection.tsv"
 download_and_unzip_spam_data(url, "sms_spam_collection.zip", "sms_spam_collection", data_file_path)
@@ -48,7 +44,6 @@ val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
 
 print(f"Train: {len(train_dataset)}, Val: {len(val_dataset)}\n")
 
-# Load model
 print("Loading pretrained GPT-2...")
 cfg = GPT_CONFIG_124M.copy()
 cfg["qkv_bias"] = True
@@ -62,13 +57,11 @@ model.to(device)
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5, weight_decay=0.1)
 
-# Baseline
 print("Baseline accuracy (before training):")
 train_acc_before = calc_accuracy_loader(train_loader, model, device, num_batches=5)
 val_acc_before = calc_accuracy_loader(val_loader, model, device, num_batches=5)
 print(f"  Train: {train_acc_before:.2%}  Val: {val_acc_before:.2%}\n")
 
-# Train 1 epoch, 10 batches only
 print("Training 1 epoch (10 batches only, for speed)...")
 model.train()
 for i, (input_batch, target_batch) in enumerate(train_loader):
@@ -81,7 +74,6 @@ for i, (input_batch, target_batch) in enumerate(train_loader):
     if i % 5 == 0:
         print(f"  Batch {i}: loss={loss.item():.4f}")
 
-# After training
 print("\nAccuracy after 10 training batches:")
 train_acc_after = calc_accuracy_loader(train_loader, model, device, num_batches=5)
 val_acc_after = calc_accuracy_loader(val_loader, model, device, num_batches=5)

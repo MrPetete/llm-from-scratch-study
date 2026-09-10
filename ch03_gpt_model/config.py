@@ -1,22 +1,16 @@
-"""
-GPT model configuration.
-
-The same architecture scales from GPT-2 small (124M params) up to XL just by
-changing these numbers -- no structural code changes needed.
-"""
+"""GPT model configurations -- same architecture, different sizes."""
 
 GPT_CONFIG_124M = {
-    "vocab_size": 50257,     # BPE vocabulary size (tiktoken gpt2 encoding)
-    "context_length": 1024,  # max sequence length the model can process
-    "embed_dim": 768,        # embedding dimension
-    "num_heads": 12,         # number of attention heads
-    "num_layers": 12,        # number of transformer blocks stacked
-    "dropout": 0.1,          # dropout rate (embeddings, attention, feed-forward)
-    "qkv_bias": False,       # whether Q/K/V linear layers have a bias term
+    "vocab_size": 50257,     # tiktoken gpt2 BPE vocab
+    "context_length": 1024,
+    "embed_dim": 768,
+    "num_heads": 12,
+    "num_layers": 12,
+    "dropout": 0.1,
+    "qkv_bias": False,
 }
 
-# GPT-2 medium (355M params) -- used in Chapter 7 for instruction fine-tuning,
-# since the small 124M model isn't capable enough to follow instructions well.
+# GPT-2 medium (355M) -- used in Chapter 7 for instruction fine-tuning
 GPT_CONFIG_355M = {
     "vocab_size": 50257,
     "context_length": 1024,
@@ -27,8 +21,7 @@ GPT_CONFIG_355M = {
     "qkv_bias": False,
 }
 
-# A much smaller config for fast local experimentation on CPU -- same code,
-# just tiny numbers so forward/backward passes run in milliseconds.
+# Small config for fast local CPU experimentation
 GPT_CONFIG_TINY = {
     "vocab_size": 50257,
     "context_length": 128,

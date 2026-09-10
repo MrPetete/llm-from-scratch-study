@@ -1,29 +1,4 @@
-"""
-Chapter 4, Step 3: Decoding Strategies (Temperature, Top-k)
-
-Greedy decoding (argmax, from Chapter 3) always picks the single
-highest-probability token. This is deterministic but tends to get stuck in
-repetitive loops -- exactly what we just saw ("the the the the...") after
-training. Two techniques fix this by adding controlled randomness:
-
-TEMPERATURE SCALING
-    Divide logits by a temperature T before softmax:
-        probs = softmax(logits / T)
-    - T < 1.0: sharpens the distribution (more confident, closer to greedy)
-    - T = 1.0: unchanged
-    - T > 1.0: flattens the distribution (more random, more diverse/risky)
-    Then SAMPLE from this distribution (torch.multinomial) instead of argmax.
-
-TOP-K SAMPLING
-    Before sampling, zero out (set to -inf) every token EXCEPT the k highest
-    -logit ones. This prevents temperature from ever sampling a wildly
-    inappropriate low-probability token -- we only ever sample among the
-    k most plausible candidates, just with controlled randomness about
-    WHICH of those k gets picked.
-
-Combining both: top-k narrows the candidate pool, temperature controls how
-sharply we prefer the top of that pool vs spreading weight across it.
-"""
+"""Decoding strategies: temperature scaling and top-k sampling, as alternatives to greedy argmax."""
 
 import os
 import sys
@@ -43,7 +18,7 @@ def generate_text_sampled(model, token_ids, max_new_tokens, context_length,
         max_new_tokens: how many new tokens to generate
         context_length: model's max sequence length (sliding window truncation)
         temperature: softmax temperature. 1.0 = unscaled. 0.0 falls back to
-            greedy argmax (temperature=0 would divide by zero otherwise).
+            greedy argmax (dividing by 0 otherwise).
         top_k: if set, restrict sampling to the top_k highest-logit tokens
         eos_id: if set, stop generation early once this token ID is produced
 
@@ -57,25 +32,23 @@ def generate_text_sampled(model, token_ids, max_new_tokens, context_length,
         with torch.no_grad():
             logits = model(input_window)
 
-        last_logits = logits[:, -1, :]   # [batch, vocab_size]
+        last_logits = logits[:, -1, :]
 
-        # --- Top-k filtering: keep only the k highest logits, -inf out the rest ---
         if top_k is not None:
             top_logits, _ = torch.topk(last_logits, top_k)
-            min_val = top_logits[:, -1]                      # kth highest logit, per batch row
+            min_val = top_logits[:, -1]
             last_logits = torch.where(
                 last_logits < min_val.unsqueeze(-1),
                 torch.tensor(-torch.inf, device=last_logits.device),
                 last_logits,
             )
 
-        # --- Sample (temperature > 0) or greedy argmax (temperature == 0) ---
         if temperature > 0.0:
             scaled_logits = last_logits / temperature
             probs = torch.softmax(scaled_logits, dim=-1)
-            next_token = torch.multinomial(probs, num_samples=1)   # [batch, 1] -- actual random sampling
+            next_token = torch.multinomial(probs, num_samples=1)
         else:
-            next_token = torch.argmax(last_logits, dim=-1, keepdim=True)   # deterministic fallback
+            next_token = torch.argmax(last_logits, dim=-1, keepdim=True)
 
         if eos_id is not None and (next_token == eos_id).all():
             break
@@ -96,27 +69,23 @@ if __name__ == "__main__":
 
     print("=== Decoding Strategies: Temperature and Top-k ===\n")
 
-    # --- Demonstrate temperature's effect on a toy distribution first ---
     print("--- Temperature scaling on a toy logit distribution ---")
     toy_logits = torch.tensor([1.0, 2.0, 3.0, 0.5, 0.1])
     for temp in [0.1, 1.0, 2.0]:
         probs = torch.softmax(toy_logits / temp, dim=-1)
         print(f"T={temp}: probs = {probs}")
-    print("Lower T -> sharper (closer to one-hot). Higher T -> flatter (closer to uniform).\n")
+    print("Lower T -> sharper distribution. Higher T -> flatter distribution.\n")
 
-    # --- Demonstrate top-k filtering on the same toy logits ---
     print("--- Top-k filtering (k=3) on the same toy logits ---")
     top_k = 3
     top_logits, top_idx = torch.topk(toy_logits, top_k)
     min_val = top_logits[-1]
     filtered = torch.where(toy_logits < min_val, torch.tensor(-torch.inf), toy_logits)
     print(f"Original logits: {toy_logits}")
-    print(f"After top-{top_k} filter: {filtered}")
-    print("The 2 lowest logits became -inf -- softmax will assign them exactly 0 probability.\n")
+    print(f"After top-{top_k} filter: {filtered}\n")
 
-    # --- Use the model we just trained -- reload via a fresh run for a clean comparison ---
-    print("--- Comparing decoding strategies on the trained model ---")
-    print("(Retraining briefly here for a self-contained demo -- see train.py for the full run)\n")
+    print("--- Comparing decoding strategies on a briefly-trained model ---")
+    print("(Retraining here for a self-contained demo -- see train.py for the full run)\n")
 
     from dataloader import create_dataloader_v1
     from loss import calc_loss_batch
@@ -172,6 +141,5 @@ if __name__ == "__main__":
     print("1. Greedy decoding is deterministic and prone to repetition loops")
     print("2. temperature > 1 increases diversity but risks incoherent output")
     print("3. temperature < 1 stays closer to greedy but with some variation")
-    print("4. top_k caps the candidate pool -- prevents sampling a wildly implausible token")
-    print("5. Real-world generation (e.g. GPT-2/3/4 APIs) typically combines both: top_k or")
-    print("   top_p (nucleus sampling) PLUS a temperature setting")
+    print("4. top_k caps the candidate pool, preventing wildly implausible picks")
+    print("5. Real-world generation typically combines top_k/top_p with temperature")

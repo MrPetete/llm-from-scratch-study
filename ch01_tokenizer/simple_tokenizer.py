@@ -1,21 +1,11 @@
-"""
-Section 1 — simple word-level tokenizer, built from understanding of chapter 2's
-regex-splitting + vocab-lookup approach. No <unk>/<endoftext> handling yet —
-that's the next task (special tokens).
-"""
+"""Word-level tokenizer: regex split + vocab lookup. No <unk>/<endoftext> handling yet."""
 
 import re
 
 
 def split_text(text):
-    """Split raw text into tokens: words, and punctuation as separate tokens.
-
-    Splits on whitespace and a set of punctuation marks, keeping the punctuation
-    itself as tokens (so "Hello, world." -> ["Hello", ",", "world", "."]).
-    """
-    # capture group on the delimiters so re.split keeps them in the output
+    """Split text into words and punctuation tokens, e.g. "Hello, world." -> ["Hello", ",", "world", "."]."""
     pieces = re.split(r'([,.:;?_!"()\']|--|\s)', text)
-    # drop empty strings and pure-whitespace pieces (whitespace itself isn't a token here)
     tokens = [p.strip() for p in pieces if p.strip()]
     return tokens
 
@@ -40,7 +30,7 @@ class SimpleTokenizerV1:
     def decode(self, ids):
         tokens = [self.int_to_str[i] for i in ids]
         text = " ".join(tokens)
-        # remove the space introduced before punctuation, e.g. "world ." -> "world."
+        # drop the space before punctuation: "world ." -> "world."
         text = re.sub(r'\s+([,.:;?_!"()\'])', r'\1', text)
         return text
 
