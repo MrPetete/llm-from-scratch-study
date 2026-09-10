@@ -10,3 +10,6 @@ data/raw/
 ch05_finetuning/sms_spam_collection/
 ch05_finetuning/*.zip
 ch05_finetuning/*.log
+ch06_instruction_finetuning/instruction-data.json
+ch06_instruction_finetuning/checkpoints/
+ch06_instruction_finetuning/*.log

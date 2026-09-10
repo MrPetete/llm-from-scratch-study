@@ -120,11 +120,27 @@ def load_openai_weights_into_gpt(gpt: GPTModel, sd: dict, num_layers: int):
 
 def download_gpt2_small_state_dict(hf_home: str = "D:/hf-cache") -> dict:
     """Download (or reuse cached) GPT-2 small weights from HuggingFace, redirected to D:."""
+    return download_gpt2_state_dict("openai-community/gpt2", hf_home)
+
+
+def download_gpt2_state_dict(repo_id: str, hf_home: str = "D:/hf-cache") -> dict:
+    """
+    Download (or reuse cached) GPT-2 weights from HuggingFace, redirected to D:.
+
+    repo_id examples:
+        "openai-community/gpt2"         -> small,  124M params, 12 layers
+        "openai-community/gpt2-medium"  -> medium, 355M params, 24 layers
+        "openai-community/gpt2-large"   -> large,  774M params, 36 layers
+        "openai-community/gpt2-xl"      -> xl,     1.5B params, 48 layers
+    """
     os.environ.setdefault("HF_HOME", hf_home)
+    # huggingface.co is unreliable on this network; hf-mirror.com is a public
+    # mirror that serves the same files and works reliably here.
+    os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
     from huggingface_hub import hf_hub_download
     from safetensors.torch import load_file
 
-    weights_path = hf_hub_download(repo_id="openai-community/gpt2", filename="model.safetensors")
+    weights_path = hf_hub_download(repo_id=repo_id, filename="model.safetensors")
     return load_file(weights_path)
 
 

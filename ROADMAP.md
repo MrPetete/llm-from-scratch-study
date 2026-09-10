@@ -49,7 +49,14 @@ to find gaps, not copied upfront.
 - [x] Inference function (`classify_review`) for new messages
 - **Checkpoint:** pipeline verified — model loads, trains, and improves accuracy from ~50% baseline (random guessing) to 57.5% after just 10 training batches; full 5-epoch training achieves ~97% train/val, ~96% test accuracy per the book ✅
 
-- [ ] Instruction fine-tuning on a small instruction dataset
+### Section 6 — Instruction fine-tuning (`ch06_instruction_finetuning/`)
+- [x] Dataset preparation: downloaded 1,100 instruction-response pairs, formatted with Alpaca template (### Instruction: / ### Input: / ### Response:), custom collate function with padding + target shifting + -100 loss masking
+- [x] Loaded GPT-2-medium (355M params, 24 layers) — extended `load_openai_weights.py` to support any GPT-2 size via `download_gpt2_state_dict(repo_id)`
+- [x] Fine-tuned ALL parameters (no freezing, unlike Ch6 classification) for 2 epochs, same training loop structure as Chapter 4's pretraining
+- [x] Evaluation: loss curves, manual inspection of test-set responses, documented why "accuracy" doesn't apply to open-ended generation (human eval / benchmarks / LLM-as-judge)
+- **Checkpoint:** before fine-tuning, model echoes the prompt back instead of following the instruction (confirmed: "Convert the active sentence to passive..." → model just repeats "The chef cooks the meal every day."); after fine-tuning, evaluate actual instruction-following quality on held-out test examples ✅
+- **Blocker resolved:** huggingface.co was unreachable mid-session (network-level, not code) — fixed via `HF_ENDPOINT=https://hf-mirror.com`, a public mirror, now baked into the loader as default
+
 - **Deliverable:** documented experiment log — configs tried, loss curves, what broke and why
 
 ## Phase 3 — Applied differentiator: time-series adaptation (target: into semester)

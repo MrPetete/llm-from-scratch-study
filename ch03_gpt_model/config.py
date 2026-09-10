@@ -15,6 +15,18 @@ GPT_CONFIG_124M = {
     "qkv_bias": False,       # whether Q/K/V linear layers have a bias term
 }
 
+# GPT-2 medium (355M params) -- used in Chapter 7 for instruction fine-tuning,
+# since the small 124M model isn't capable enough to follow instructions well.
+GPT_CONFIG_355M = {
+    "vocab_size": 50257,
+    "context_length": 1024,
+    "embed_dim": 1024,
+    "num_heads": 16,
+    "num_layers": 24,
+    "dropout": 0.1,
+    "qkv_bias": False,
+}
+
 # A much smaller config for fast local experimentation on CPU -- same code,
 # just tiny numbers so forward/backward passes run in milliseconds.
 GPT_CONFIG_TINY = {
